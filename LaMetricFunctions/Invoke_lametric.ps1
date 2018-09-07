@@ -11,7 +11,7 @@
     The Port used by the Lametric Time , currently this is always 8080 for local notifications .
 .PARAMETER ApiKey
     The API key used by the Lametric Time , follow the guid at https://lametric-documentation.readthedocs.io/en/latest/guides/first-steps/first-local-notification.html 
-    to find the API key .
+    to find the API key . The key will look some thing like 'dev:343sgsag1441sdafasd414' .
 .PARAMETER Messages
     The message or messages to send , see the examples .
 .PARAMETER MessagesIcon
@@ -25,33 +25,42 @@
 .PARAMETER Cycles
     The number of times notification should be displayed , more information at https://lametric-documentation.readthedocs.io/en/latest/reference-docs/device-notifications.html . 
 .EXAMPLE
-    Invoke-lametric -Ipaddress '10.0.0.1' -Messages 'Test notification' -MessagesIcon '20935' -Cycles 1 
-    <Simple Example to that sends a message saying 'Test notification'>
+    Invoke-lametric -Ipaddress '10.0.0.1' -ApiKey 'dev:343sgsag1441sdafasd414' -Messages 'Test notification' -MessagesIcon '20935' -Cycles 3 
+    <Send a message saying 'Test notification'.>
+.EXAMPLE
+
+    $LMessages=New-Object System.Collections.Generic.List[System.Object]
+    $LMessages.Add('Message One')
+    $LMessages.Add('Message two')
+    $LMessages.Add('Message three')
+
+    Invoke-lametric -Ipaddress '10.0.0.1' -ApiKey 'dev:343sg' -Messages $LMessages 
+    
+    <Sends three diffrent messages with one notification.'>
 .NOTES
     Author: Justin Fourie Date:   4 September 2018   
 #>
 function Invoke-lametric{
         [CmdletBinding()]
         param (
-                [string]$Ipaddress = '10.0.0.1',
+                [Parameter(Mandatory=$true)] [string]$Ipaddress,
                 [int]$Port  = '8080',
-                [string]$ApiKey  ='dev:1' <# Place your API key e.g 'dev:343sgsag1441sdafasd414'#>,
-                [string[]]$Messages = (''),
-                [string]$MessagesIcon = '1036',
+                [Parameter(Mandatory=$true)] [string]$ApiKey,
+                [Parameter(Mandatory=$true)] [string[]]$Messages,
+                [string]$MessagesIcon = '555',
                 [ValidateSet('info','warning','critical')][string]$Priority = 'info',
                 [ValidateSet('none','info','alert')][string]$IconType = 'none',
                 [int]$LifeTime = '1000',
                 [int]$Cycles = 1      
         )   
         begin {
-                # any thing in the begin only runs once
                 $APIBIT  = [System.Text.Encoding]::UTF8.GetBytes("$ApiKey")
                 $API64BIT = [System.Convert]::ToBase64String($APIBIT) 
                 $Payload = ''  
         }
         process {
-            # any thing you want to loop would run hear , Process block is called once for each item in the pipeline
-            # Lets check how many messages we are sending 
+            
+            # Lets check how many messages we are sending and then build the payload
 
             IF(@($Messages).length -eq 1) 
              {
@@ -71,7 +80,7 @@ function Invoke-lametric{
         
         }
 
-        end { # this is where you would normaly place the output  
+        end { 
                 $GetRequest = @{uri = 'http://'+$Ipaddress+':'+$Port+'/api/v2';
                                 Method = 'GET';
                                 Headers = @{Authorization = 'Basic '+$API64BIT +'';}
